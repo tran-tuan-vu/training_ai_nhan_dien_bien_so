@@ -1,0 +1,6 @@
+ultralytics
+flask
+paddleocr
+paddlepaddle==3.2.2
+opencv-python
+pymongo

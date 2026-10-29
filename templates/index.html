@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô hình nhận diện biển số</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --panel-2: #253449;
+            --border: #334155;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --accent: #38bdf8;
+            --accent-2: #22c55e;
+            --danger: #f87171;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            font-size: 20px;
+            margin: 0;
+        }
+
+        header .weights {
+            font-size: 13px;
+            color: var(--muted);
+            font-family: Consolas, monospace;
+            background: var(--panel-2);
+            padding: 3px 8px;
+            border-radius: 6px;
+        }
+
+        main {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 28px 20px 60px;
+        }
+
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .dropzone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 36px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+
+        .dropzone.dragover {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.08);
+        }
+
+        .dropzone p {
+            margin: 6px 0;
+            color: var(--muted);
+        }
+
+        .dropzone .icon {
+            font-size: 34px;
+            margin-bottom: 8px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 18px;
+        }
+
+        .controls label {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .controls input[type="range"] {
+            vertical-align: middle;
+        }
+
+        #confVal {
+            font-family: Consolas, monospace;
+            color: var(--accent);
+        }
+
+        button.run-btn {
+            background: var(--accent);
+            color: #0f172a;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity .15s;
+        }
+
+        button.run-btn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        button.run-btn:hover:not(:disabled) {
+            opacity: .9;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        @media (max-width: 800px) {
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .img-box {
+            background: var(--panel-2);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .img-box h3 {
+            margin: 0;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .img-box img {
+            width: 100%;
+            display: block;
+        }
+
+        .stats {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin: 18px 0;
+        }
+
+        .stat {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 18px;
+            min-width: 130px;
+        }
+
+        .stat .label {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .stat .value {
+            font-size: 22px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .stat.ok .value {
+            color: var(--accent-2);
+        }
+
+        .stat.warn .value {
+            color: var(--danger);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        th {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .conf-bar {
+            display: inline-block;
+            height: 6px;
+            background: var(--accent-2);
+            border-radius: 3px;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        .error-box {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 14px;
+            display: none;
+        }
+
+        .spinner {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            margin-top: 14px;
+            font-size: 14px;
+        }
+
+        .spinner .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 1s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: .3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 18px;
+        }
+
+        .tab-btn {
+            background: var(--panel);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #0f172a;
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .empty-hint {
+            color: var(--muted);
+            font-size: 14px;
+            text-align: center;
+            padding: 30px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Mô hình nhận diện biển số</h1>
+    </header>
+
+    <main>
+        <div class="tabs">
+            <button class="tab-btn active" id="tabUploadBtn">📁 Tải ảnh lên</button>
+            <button class="tab-btn" id="tabCameraBtn">🎥 Camera trực tiếp</button>
+        </div>
+
+        <div id="uploadPanel">
+        <div class="card">
+            <div class="dropzone" id="dropzone">
+                <div class="icon">📤</div>
+                <p><strong>Kéo & thả ảnh vào đây</strong> hoặc bấm để chọn file</p>
+                <p style="font-size:12px">Hỗ trợ JPG, PNG, BMP, WEBP</p>
+                <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.bmp,.webp">
+            </div>
+
+            <div class="controls">
+                <label for="confRange">Ngưỡng tin cậy (confidence):</label>
+                <input type="range" id="confRange" min="0.05" max="0.95" step="0.05" value="0.25">
+                <span id="confVal">0.25</span>
+                <button class="run-btn" id="runBtn" disabled>Chạy đánh giá</button>
+            </div>
+
+            <div class="spinner" id="spinner"><span class="dot"></span> Đang chạy mô hình...</div>
+            <div class="error-box" id="errorBox"></div>
+        </div>
+
+        <div class="card" id="resultCard" style="display:none;">
+            <div class="stats">
+                <div class="stat ok">
+                    <div class="label">Số biển số phát hiện</div>
+                    <div class="value" id="statCount">0</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Thời gian suy luận</div>
+                    <div class="value" id="statTime">0 ms</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Ngưỡng conf dùng</div>
+                    <div class="value" id="statConf">-</div>
+                </div>
+                <div class="stat">
+                    <div class="label">Thời gian OCR</div>
+                    <div class="value" id="statOcrTime">0 ms</div>
+                </div>
+            </div>
+
+            <div class="results-grid">
+                <div class="img-box">
+                    <h3>Ảnh gốc</h3>
+                    <img id="originalImg" src="" alt="Ảnh gốc">
+                </div>
+                <div class="img-box">
+                    <h3>Kết quả dự đoán</h3>
+                    <img id="resultImg" src="" alt="Kết quả">
+                </div>
+            </div>
+
+            <h3 style="margin-top:22px;">Chi tiết phát hiện</h3>
+            <div id="detTableWrap">
+                <table id="detTable">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Lớp</th>
+                            <th>Độ tin cậy</th>
+                            <th>Biển số nhận dạng (OCR)</th>
+                            <th>Bounding box (x1,y1,x2,y2)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detBody"></tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+
+        <div id="cameraPanel" style="display:none;">
+            <div class="card">
+                <div class="controls" style="margin-top:0;">
+                    <label for="camConfRange">Ngưỡng tin cậy (confidence):</label>
+                    <input type="range" id="camConfRange" min="0.05" max="0.95" step="0.05" value="0.25">
+                    <span id="camConfVal">0.25</span>
+                    <button class="run-btn" id="camStartBtn">Bật camera</button>
+                    <button class="run-btn" id="camStopBtn" style="background:var(--danger); display:none;">Tắt camera</button>
+                </div>
+                <div class="error-box" id="camErrorBox"></div>
+
+                <div class="img-box" style="margin-top:16px; max-width:640px;">
+                    <h3>Video trực tiếp</h3>
+                    <div id="camPlaceholder" class="empty-hint">Bấm "Bật camera" để bắt đầu.</div>
+                    <img id="cameraFeed" style="display:none;" alt="Camera trực tiếp">
+                </div>
+                <p style="font-size:12px; color:var(--muted); margin-top:10px;">
+                    Khung xanh + tỉ lệ % là biển số vừa đọc được bằng OCR, hiển thị trong vài giây.
+                    OCR chạy chậm hơn video (vài giây/lần) nên chữ đọc được có thể cập nhật trễ hơn hình ảnh.
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                <h3 style="margin:0;">Lịch sử nhận diện</h3>
+                <button class="run-btn" id="refreshHistoryBtn" style="padding:6px 16px; font-size:13px;">Làm mới</button>
+            </div>
+            <div id="historyTableWrap" style="margin-top:12px;">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Ảnh</th>
+                            <th>Biển số</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="4" class="empty-hint">Đang tải...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const runBtn = document.getElementById('runBtn');
+        const confRange = document.getElementById('confRange');
+        const confVal = document.getElementById('confVal');
+        const spinner = document.getElementById('spinner');
+        const errorBox = document.getElementById('errorBox');
+        const resultCard = document.getElementById('resultCard');
+
+        let selectedFile = null;
+
+        confRange.addEventListener('input', () => {
+            confVal.textContent = confRange.value;
+        });
+
+        dropzone.addEventListener('click', () => fileInput.click());
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            selectedFile = file;
+            dropzone.querySelector('p').textContent = `Đã chọn: ${file.name}`;
+            runBtn.disabled = false;
+            errorBox.style.display = 'none';
+        }
+
+        runBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            errorBox.style.display = 'none';
+            spinner.style.display = 'flex';
+            runBtn.disabled = true;
+            resultCard.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('conf', confRange.value);
+
+            try {
+                const res = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Có lỗi xảy ra.');
+                }
+
+                renderResult(data);
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.style.display = 'block';
+            } finally {
+                spinner.style.display = 'none';
+                runBtn.disabled = false;
+            }
+        });
+
+        function renderResult(data) {
+            document.getElementById('originalImg').src = data.original_url + '?t=' + Date.now();
+            document.getElementById('resultImg').src = data.result_url + '?t=' + Date.now();
+            document.getElementById('statCount').textContent = data.num_detections;
+            document.getElementById('statTime').textContent = data.inference_ms + ' ms';
+            document.getElementById('statConf').textContent = data.conf_threshold;
+            document.getElementById('statOcrTime').textContent = (data.ocr_ms ?? 0) + ' ms';
+
+            const body = document.getElementById('detBody');
+            body.innerHTML = '';
+
+            if (data.detections.length === 0) {
+                body.innerHTML = '<tr><td colspan="5" class="empty-hint">Không phát hiện được biển số nào trong ảnh.</td></tr>';
+            } else {
+                data.detections.forEach((d, i) => {
+                    const pct = Math.round(d.confidence * 100);
+                    const plateText = d.plate_text ? d.plate_text : '<span style="color:var(--muted)">(không đọc được)</span>';
+                    const ocrPct = d.ocr_confidence ? Math.round(d.ocr_confidence * 100) + '%' : '-';
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                <td>${i + 1}</td>
+                <td>${d.class}</td>
+                <td>
+                    <span class="conf-bar" style="width:${pct}px"></span>${pct}%
+                </td>
+                <td><strong>${plateText}</strong> <span style="color:var(--muted); font-size:12px;">(${ocrPct})</span></td>
+                <td>${d.bbox.join(', ')}</td>
+            `;
+                    body.appendChild(row);
+                });
+            }
+
+            resultCard.style.display = 'block';
+            loadHistory();
+        }
+
+        async function loadHistory() {
+            const historyBody = document.getElementById('historyBody');
+            try {
+                const res = await fetch('/history?limit=20');
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.error || 'Không thể tải lịch sử.');
+                }
+
+                if (data.records.length === 0) {
+                    historyBody.innerHTML = '<tr><td colspan="4" class="empty-hint">Chưa có dữ liệu nào được lưu.</td></tr>';
+                    return;
+                }
+
+                historyBody.innerHTML = '';
+                data.records.forEach((r) => {
+                    const time = new Date(r.created_at).toLocaleString('vi-VN');
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                <td>${r.stt}</td>
+                <td><a href="${r.image}" target="_blank"><img src="${r.image}" style="height:40px; border-radius:4px; vertical-align:middle;"></a></td>
+                <td><strong>${r.plate_text || '(không đọc được)'}</strong></td>
+                <td style="white-space:nowrap;">${time}</td>
+            `;
+                    historyBody.appendChild(row);
+                });
+            } catch (err) {
+                historyBody.innerHTML = `<tr><td colspan="4" class="empty-hint" style="color:var(--danger)">${err.message}</td></tr>`;
+            }
+        }
+
+        document.getElementById('refreshHistoryBtn').addEventListener('click', loadHistory);
+        loadHistory();
+
+        // --- Tab switching ---
+        const tabUploadBtn = document.getElementById('tabUploadBtn');
+        const tabCameraBtn = document.getElementById('tabCameraBtn');
+        const uploadPanel = document.getElementById('uploadPanel');
+        const cameraPanel = document.getElementById('cameraPanel');
+
+        tabUploadBtn.addEventListener('click', () => {
+            tabUploadBtn.classList.add('active');
+            tabCameraBtn.classList.remove('active');
+            uploadPanel.style.display = 'block';
+            cameraPanel.style.display = 'none';
+            stopCamera();
+        });
+
+        tabCameraBtn.addEventListener('click', () => {
+            tabCameraBtn.classList.add('active');
+            tabUploadBtn.classList.remove('active');
+            cameraPanel.style.display = 'block';
+            uploadPanel.style.display = 'none';
+        });
+
+        // --- Camera trực tiếp ---
+        const camConfRange = document.getElementById('camConfRange');
+        const camConfVal = document.getElementById('camConfVal');
+        const camStartBtn = document.getElementById('camStartBtn');
+        const camStopBtn = document.getElementById('camStopBtn');
+        const camErrorBox = document.getElementById('camErrorBox');
+        const camPlaceholder = document.getElementById('camPlaceholder');
+        const cameraFeed = document.getElementById('cameraFeed');
+
+        let historyPollTimer = null;
+        let cameraOn = false;
+
+        camConfRange.addEventListener('input', () => {
+            camConfVal.textContent = camConfRange.value;
+        });
+
+        function startCamera() {
+            camErrorBox.style.display = 'none';
+            cameraFeed.onerror = () => {
+                camErrorBox.textContent = 'Không mở được camera. Có thể camera đang được ứng dụng khác sử dụng, hoặc trình duyệt/máy chưa cấp quyền camera cho ứng dụng.';
+                camErrorBox.style.display = 'block';
+                stopCamera();
+            };
+            cameraFeed.src = '/video_feed?conf=' + camConfRange.value + '&t=' + Date.now();
+            cameraFeed.style.display = 'block';
+            camPlaceholder.style.display = 'none';
+            camStartBtn.style.display = 'none';
+            camStopBtn.style.display = 'inline-block';
+            cameraOn = true;
+            historyPollTimer = setInterval(loadHistory, 4000);
+        }
+
+        async function stopCamera() {
+            if (!cameraOn) return;
+            cameraOn = false;
+            cameraFeed.src = '';
+            cameraFeed.style.display = 'none';
+            camPlaceholder.style.display = 'block';
+            camStartBtn.style.display = 'inline-block';
+            camStopBtn.style.display = 'none';
+            if (historyPollTimer) {
+                clearInterval(historyPollTimer);
+                historyPollTimer = null;
+            }
+            try {
+                await fetch('/camera/stop', { method: 'POST' });
+            } catch (err) {
+                // bỏ qua lỗi khi tắt camera
+            }
+            loadHistory();
+        }
+
+        camStartBtn.addEventListener('click', startCamera);
+        camStopBtn.addEventListener('click', stopCamera);
+        window.addEventListener('beforeunload', () => {
+            if (cameraOn) {
+                navigator.sendBeacon('/camera/stop');
+            }
+        });
+    </script>
+</body>
+
+</html>

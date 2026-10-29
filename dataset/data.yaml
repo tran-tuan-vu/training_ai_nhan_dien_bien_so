@@ -1,0 +1,6 @@
+train: E:/code/training_ai_nhan_dien_bien_so/dataset/images/train
+val: E:/code/training_ai_nhan_dien_bien_so/dataset/images/val
+test: E:/code/training_ai_nhan_dien_bien_so/dataset/images/test
+
+nc: 1
+names: ['license_plate']

@@ -1,0 +1,31 @@
+# Môi trường ảo & cache Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# Biến môi trường / bí mật
+.env
+.env.*
+*.key
+*.pem
+
+# Ảnh người dùng upload và kết quả nhận diện (dữ liệu riêng tư)
+static/uploads/*
+static/results/*
+!static/uploads/.gitkeep
+!static/results/.gitkeep
+
+# Cache dataset
+dataset/labels/*.cache
+
+# Trọng số pretrained (tự tải lại được) và checkpoint trung gian
+yolo11n.pt
+/weights/
+runs/**/weights/last.pt
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
